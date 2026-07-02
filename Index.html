@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Interval — Break Reminders</title>
+<meta name="theme-color" content="#12141F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141F;
+    --card:#1B1E2E;
+    --card-2:#20243660;
+    --amber:#FFB03B;
+    --teal:#5FD9C6;
+    --text:#EDEDF2;
+    --muted:#8A8DA0;
+    --ring-track:#2A2E42;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(120% 140% at 50% -10%, #1B1E30 0%, #12141F 55%, #0D0E17 100%);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 20px 40px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0 0 26px;
+    letter-spacing:-.01em;
+  }
+  h1 span{color:var(--amber);}
+
+  .ring-wrap{
+    position:relative;
+    width:250px;
+    height:250px;
+    margin:6px 0 22px;
+  }
+  svg{transform:rotate(-90deg);}
+  .track{stroke:var(--ring-track); fill:none; stroke-width:10;}
+  .progress{
+    stroke:var(--amber);
+    fill:none;
+    stroke-width:10;
+    stroke-linecap:round;
+    transition:stroke-dashoffset 1s linear, stroke .3s;
+  }
+  .progress.paused{stroke:var(--muted);}
+  .ring-center{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:4px;
+  }
+  .time-left{
+    font-family:'Fraunces',serif;
+    font-size:44px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-.02em;
+  }
+  .time-label{font-size:12px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase;}
+
+  .card{
+    background:var(--card);
+    border:1px solid #262A3D;
+    border-radius:18px;
+    padding:22px;
+    width:100%;
+    max-width:380px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:12px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 14px;
+    font-weight:600;
+  }
+  .presets{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .preset-btn{
+    flex:1 1 auto;
+    background:#242841;
+    border:1px solid #2E334E;
+    color:var(--text);
+    padding:12px 10px;
+    border-radius:12px;
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .15s;
+    min-width:100px;
+  }
+  .preset-btn:hover{border-color:var(--amber);}
+  .preset-btn.active{
+    background:linear-gradient(135deg,#FFB03B,#F08A2E);
+    border-color:transparent;
+    color:#1B1200;
+    font-weight:700;
+  }
+  .custom-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#161927;
+    border:1px solid #262A3D;
+    border-radius:12px;
+    padding:10px 14px;
+  }
+  .custom-row label{font-size:13px; color:var(--muted); white-space:nowrap;}
+  .custom-row input[type=number]{
+    width:56px;
+    background:transparent;
+    border:none;
+    color:var(--text);
+    font-size:16px;
+    font-family:'Inter';
+    text-align:center;
+    -moz-appearance:textfield;
+  }
+  .custom-row input::-webkit-outer-spin-button,
+  .custom-row input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .custom-row span.unit{color:var(--muted); font-size:13px;}
+  .custom-row button{
+    margin-left:auto;
+    background:none;
+    border:1px solid var(--teal);
+    color:var(--teal);
+    padding:8px 14px;
+    border-radius:9px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .custom-row button:hover{background:var(--teal); color:#0D1F1B;}
+
+  .controls{
+    display:flex;
+    gap:10px;
+    width:100%;
+    max-width:380px;
+    margin-bottom:16px;
+  }
+  .btn{
+    flex:1;
+    padding:15px;
+    border-radius:14px;
+    border:none;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    transition:transform .1s, opacity .15s;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-start{background:linear-gradient(135deg,#FFB03B,#F08A2E); color:#1B1200;}
+  .btn-stop{background:#242841; color:var(--text); border:1px solid #2E334E;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+
+  .status{
+    font-size:13px;
+    color:var(--muted);
+    text-align:center;
+    max-width:380px;
+    line-height:1.5;
+  }
+  .status.ok{color:var(--teal);}
+  .status.warn{color:var(--amber);}
+
+  .footer-note{
+    margin-top:28px;
+    font-size:12px;
+    color:#565A70;
+    text-align:center;
+    max-width:340px;
+    line-height:1.6;
+  }
+  .footer-note a{color:var(--muted);}
+
+  #enable-btn{
+    background:none;
+    border:1px solid var(--amber);
+    color:var(--amber);
+    padding:10px 18px;
+    border-radius:11px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">Interval</div>
+  <h1>Break <span>Reminders</span></h1>
+
+  <div class="ring-wrap">
+    <svg width="250" height="250" viewBox="0 0 250 250">
+      <circle class="track" cx="125" cy="125" r="110"></circle>
+      <circle id="progress-circle" class="progress" cx="125" cy="125" r="110"
+        stroke-dasharray="691.15" stroke-dashoffset="0"></circle>
+    </svg>
+    <div class="ring-center">
+      <div class="time-left" id="time-left">1:30:00</div>
+      <div class="time-label" id="ring-status">ready</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Interval length</h2>
+    <div class="presets">
+      <button class="preset-btn active" data-min="90">1h 30m</button>
+      <button class="preset-btn" data-min="75">1h 15m</button>
+    </div>
+    <div class="custom-row">
+      <label for="custom-h">Custom</label>
+      <input type="number" id="custom-h" min="0" max="12" value="0" placeholder="0">
+      <span class="unit">h</span>
+      <input type="number" id="custom-m" min="0" max="59" value="45" placeholder="0">
+      <span class="unit">min</span>
+      <button id="set-custom">Set</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-start" id="start-btn">Start</button>
+    <button class="btn btn-stop" id="stop-btn" disabled>Stop</button>
+  </div>
+
+  <div class="status" id="status">Notifications not enabled yet.<br>
+    <button id="enable-btn">Enable notifications</button>
+  </div>
+
+  <div class="footer-note">
+    Runs while this app is open (in a tab or as an installed app). Android may pause it if you close the app or lock the phone for a long time — reopen it to keep reminders going.
+  </div>
+
+<script>
+const PRESET_BTNS = document.querySelectorAll('.preset-btn');
+const customH = document.getElementById('custom-h');
+const customM = document.getElementById('custom-m');
+const setCustomBtn = document.getElementById('set-custom');
+const startBtn = document.getElementById('start-btn');
+const stopBtn = document.getElementById('stop-btn');
+const enableBtn = document.getElementById('enable-btn');
+const statusEl = document.getElementById('status');
+const timeLeftEl = document.getElementById('time-left');
+const ringStatusEl = document.getElementById('ring-status');
+const progressCircle = document.getElementById('progress-circle');
+
+const CIRC = 2 * Math.PI * 110; // 691.15
+
+let intervalSeconds = 90 * 60;
+let remaining = intervalSeconds;
+let timerId = null;
+let running = false;
+
+function fmt(sec){
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  if(h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function updateRing(){
+  timeLeftEl.textContent = fmt(remaining);
+  const frac = remaining / intervalSeconds;
+  progressCircle.style.strokeDashoffset = CIRC * (1 - frac);
+}
+
+function setInterval_(minutes, activeBtn){
+  intervalSeconds = Math.max(60, Math.round(minutes * 60));
+  remaining = intervalSeconds;
+  PRESET_BTNS.forEach(b => b.classList.remove('active'));
+  if(activeBtn) activeBtn.classList.add('active');
+  updateRing();
+}
+
+PRESET_BTNS.forEach(btn => {
+  btn.addEventListener('click', () => {
+    setInterval_(Number(btn.dataset.min), btn);
+  });
+});
+
+setCustomBtn.addEventListener('click', () => {
+  const h = Number(customH.value) || 0;
+  const m = Number(customM.value) || 0;
+  const total = h * 60 + m;
+  if(total <= 0){
+    statusEl.textContent = 'Enter a duration greater than 0.';
+    statusEl.className = 'status warn';
+    return;
+  }
+  setInterval_(total, null);
+  statusEl.textContent = `Custom interval set: ${h}h ${m}m.`;
+  statusEl.className = 'status';
+});
+
+function requestPermission(){
+  if(!('Notification' in window)){
+    statusEl.textContent = 'This browser does not support notifications.';
+    statusEl.className = 'status warn';
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    if(perm === 'granted'){
+      statusEl.textContent = 'Notifications enabled. You can start your timer.';
+      statusEl.className = 'status ok';
+      enableBtn.style.display = 'none';
+    } else {
+      statusEl.textContent = 'Notifications blocked. Enable them in your browser/site settings to get reminders.';
+      statusEl.className = 'status warn';
+    }
+  });
+}
+enableBtn.addEventListener('click', requestPermission);
+
+// Check existing permission on load
+if('Notification' in window && Notification.permission === 'granted'){
+  statusEl.textContent = 'Notifications enabled. You can start your timer.';
+  statusEl.className = 'status ok';
+  enableBtn.style.display = 'none';
+}
+
+function fireNotification(){
+  const title = 'Time for a break';
+  const opts = {
+    body: `Your ${fmt(intervalSeconds)} interval is up. Stretch, hydrate, look away from the screen.`,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: 'interval-reminder',
+    renotify: true,
+    vibrate: [200,80,200]
+  };
+  if(navigator.serviceWorker && navigator.serviceWorker.controller){
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, opts));
+  } else if('Notification' in window && Notification.permission === 'granted'){
+    new Notification(title, opts);
+  }
+  // audible cue as a backup
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    o.start();
+    o.stop(ctx.currentTime + 0.35);
+  }catch(e){}
+}
+
+function tick(){
+  remaining -= 1;
+  if(remaining <= 0){
+    fireNotification();
+    remaining = intervalSeconds;
+  }
+  updateRing();
+}
+
+function start(){
+  if(running) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted'){
+    requestPermission();
+  }
+  running = true;
+  remaining = intervalSeconds;
+  updateRing();
+  progressCircle.classList.remove('paused');
+  ringStatusEl.textContent = 'running';
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+  PRESET_BTNS.forEach(b => b.disabled = false);
+  timerId = setInterval(tick, 1000);
+}
+
+function stop(){
+  running = false;
+  clearInterval(timerId);
+  timerId = null;
+  remaining = intervalSeconds;
+  updateRing();
+  progressCircle.classList.add('paused');
+  ringStatusEl.textContent = 'ready';
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+}
+
+startBtn.addEventListener('click', start);
+stopBtn.addEventListener('click', stop);
+
+updateRing();
+
+// Register service worker for installability + reliable notifications
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// Optional: install prompt handling (Android Chrome shows its own UI automatically
+// once installability criteria are met; this just avoids a console warning)
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPrompt = e;
+});
+</script>
+</body>
+</html>
